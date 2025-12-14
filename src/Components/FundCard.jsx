@@ -1,9 +1,10 @@
 import React from 'react';
 import { TrendingUp, TrendingDown, Info } from 'lucide-react';
-import { AreaChart, Area, ResponsiveContainer } from 'recharts';
+import { AreaChart, Area, ResponsiveContainer, YAxis } from 'recharts';
 
-const FundCard = ({ fund }) => {
+const FundCard = ({ fund }) => {// Log last 30 data points for brevity
   const isPositive = fund.changePercentage >= 0;
+  const safeId = fund.MFName.replace(/\s+/g, "-");
 
   const themeColors = {
     purple: { stroke: '#6e27ff', fill: '#6e27ff' },
@@ -15,16 +16,16 @@ const FundCard = ({ fund }) => {
 
   return (
     <div className="glass-panel rounded-2xl p-6 shadow-xl transition-all duration-300 hover:scale-[1.02] flex flex-col gap-4 relative overflow-hidden group">
-      
+
       {/* Top Border Accent */}
       <div
-        className={`absolute top-0 left-0 w-full h-1 ${
-          fund.colorTheme === 'purple'
+        className={`absolute top-0 left-0 w-full h-1 ${fund.colorTheme === 'purple'
             ? 'bg-fintech-purple'
             : fund.colorTheme === 'teal'
-            ? 'bg-fintech-teal'
-            : 'bg-fintech-gold'
-        }`}
+              ? 'bg-fintech-teal'
+              : 'bg-fintech-gold'
+
+          }`}
       />
 
       <div className="flex justify-between items-start">
@@ -33,7 +34,7 @@ const FundCard = ({ fund }) => {
             {fund.category}
           </span>
           <h3 className="text-xl font-bold text-slate-800 leading-tight pr-2">
-            {fund.name}
+            {fund.MFName}
           </h3>
         </div>
       </div>
@@ -44,28 +45,29 @@ const FundCard = ({ fund }) => {
             NAV
           </p>
           <p className="text-3xl font-bold text-slate-900">
-            ${fund.nav.toFixed(2)}
+            ₹{fund.nav.toFixed(2)}
           </p>
         </div>
 
         <div
-          className={`flex items-center gap-1 mb-1.5 px-2 py-0.5 rounded-md text-sm font-bold ${
-            isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-          }`}
+          className={`flex items-center gap-1 mb-1.5 px-2 py-0.5 rounded-md text-sm font-bold ${isPositive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            }`}
         >
           {isPositive ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
-          {Math.abs(fund.changePercentage)}%
+          {Math.abs(fund.change)}%
         </div>
       </div>
 
       {/* Mini Sparkline */}
-      <div className="h-16 w-full -mx-2">
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={fund.history.slice(-30)}>
+      <div className="h-24 w-full">
+        <ResponsiveContainer>
+          <AreaChart data={fund.graph.slice(-30)}>
+         
+          
             <defs>
-              <linearGradient id={`gradient-${fund.id}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor={color.fill} stopOpacity={0.2} />
-                <stop offset="95%" stopColor={color.fill} stopOpacity={0} />
+              <linearGradient id={`gradient-${safeId}`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={color.stroke} stopOpacity={0.3} />
+                <stop offset="100%" stopColor={color.fill} stopOpacity={0} />
               </linearGradient>
             </defs>
 
@@ -73,8 +75,8 @@ const FundCard = ({ fund }) => {
               type="monotone"
               dataKey="value"
               stroke={color.stroke}
-              fill={`url(#gradient-${fund.id})`}
-              strokeWidth={2}
+              fill="transparent"
+              strokeWidth={1.5}
               isAnimationActive={false}
             />
           </AreaChart>
@@ -88,11 +90,10 @@ const FundCard = ({ fund }) => {
             CAGR (1Y)
           </span>
           <span
-            className={`text-sm font-semibold ${
-              fund.cagr1Y >= 15 ? 'text-green-600' : 'text-slate-700'
-            }`}
+            className={`text-sm font-semibold ${parseFloat(fund.cagr) >= 15 ? 'text-green-600' : 'text-slate-700'
+              }`}
           >
-            {fund.cagr1Y}%
+            {fund.cagr}%
           </span>
         </div>
 
@@ -101,7 +102,7 @@ const FundCard = ({ fund }) => {
             Expense Ratio <Info size={10} />
           </span>
           <span className="text-sm font-semibold text-slate-700">
-            {fund.expenseRatio}%
+            {fund.ter}%
           </span>
         </div>
 
@@ -110,19 +111,19 @@ const FundCard = ({ fund }) => {
             Inception
           </span>
           <span className="text-sm font-semibold text-slate-700">
-            {new Date(fund.inceptionDate).getFullYear()}
+            {new Date(fund.inception).getFullYear()}
           </span>
         </div>
 
         <div className="flex flex-col">
           <span className="text-xs text-slate-400 flex items-center gap-1">
-            Exit Load
+            Fund Manager
           </span>
           <span
             className="text-sm font-semibold text-slate-700 truncate"
-            title={fund.exitLoad}
+            title={fund.fund_manager}
           >
-            {fund.exitLoad}
+            {fund.fund_manager}
           </span>
         </div>
       </div>

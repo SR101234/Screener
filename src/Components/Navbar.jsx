@@ -56,6 +56,7 @@ const Navbar = () => {
     onClick={() => navigate("/")}
     _hover={{ color: "#b400ff" }}
     flexShrink={0}
+    padding={"2%"}
     whiteSpace="nowrap"
   >
     Home
@@ -69,9 +70,24 @@ const Navbar = () => {
     onClick={() => navigate("/Screens")}
     _hover={{ color: "#b400ff" }}
     flexShrink={0}
+    padding={"2%"}
     whiteSpace="nowrap"
   >
     MF Table
+  </Button>
+  <Button
+    variant="ghost"
+    color="#fff"
+    fontWeight="bold"
+    fontFamily="Montserrat"
+    fontSize={{ base: "sm", md: "md" }}
+    onClick={() => navigate("/FundComparison")}
+    _hover={{ color: "#b400ff" }}
+    flexShrink={0}
+    whiteSpace="nowrap"
+    padding={"2%"}
+  >
+    Fund Comparison
   </Button>
   <Button
     variant="ghost"
@@ -83,6 +99,7 @@ const Navbar = () => {
     _hover={{ color: "#b400ff" }}
     flexShrink={0}
     whiteSpace="nowrap"
+    padding={"2%"}
   >
     Contact Us
   </Button>

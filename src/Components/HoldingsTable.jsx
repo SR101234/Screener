@@ -1,12 +1,14 @@
 import React from 'react';
 import { PieChart, Pie, Cell } from 'recharts';
 
-const HoldingsTable = ({ funds }) => {
+const HoldingsTable = ( funds ) => {
+  console.log(funds.funds);
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      {funds.map((fund) => (
+      {funds.funds.map((fund) => (
+        
         <div
-          key={fund.id}
+          key={fund.MFName}
           className="glass-panel rounded-2xl overflow-hidden flex flex-col h-full shadow-sm"
         >
           {/* Header */}
@@ -21,20 +23,20 @@ const HoldingsTable = ({ funds }) => {
                     : 'bg-fintech-gold'
                 }`}
               ></span>
-              {fund.name}
+              {fund.MFName}
             </h3>
 
             <div className="mt-4 flex justify-between items-center text-xs text-slate-500">
               <span>
                 Top Sector:{' '}
                 <strong className="text-slate-700">
-                  {fund.holdings[0].sector}
+                  {fund.asset[0].sector}
                 </strong>
               </span>
               <span>
                 Assets:{' '}
                 <strong className="text-slate-700">
-                  {fund.holdings.length}
+                  {fund.asset.length}
                 </strong>
               </span>
             </div>
@@ -52,13 +54,13 @@ const HoldingsTable = ({ funds }) => {
               </thead>
 
               <tbody className="divide-y divide-slate-100">
-                {fund.holdings.map((h, idx) => (
+                {fund.asset.map((h, idx) => (
                   <tr
                     key={idx}
                     className="hover:bg-slate-50/50 transition-colors"
                   >
                     <td className="px-5 py-3 font-medium text-slate-700">
-                      {h.asset}
+                      {h.name}
                     </td>
 
                     <td className="px-5 py-3 text-slate-500 text-xs">
@@ -66,7 +68,7 @@ const HoldingsTable = ({ funds }) => {
                     </td>
 
                     <td className="px-5 py-3 text-right font-semibold text-slate-700">
-                      {h.percentage}%
+                      {h.perc}%
                       <div className="w-full bg-slate-100 h-1 mt-1 rounded-full overflow-hidden">
                         <div
                           className={`h-full ${
@@ -76,7 +78,7 @@ const HoldingsTable = ({ funds }) => {
                               ? 'bg-fintech-teal'
                               : 'bg-fintech-gold'
                           }`}
-                          style={{ width: `${h.percentage * 5}%` }}
+                          style={{ width: `${h.perc * 5}%` }}
                         ></div>
                       </div>
                     </td>
@@ -86,9 +88,7 @@ const HoldingsTable = ({ funds }) => {
             </table>
           </div>
 
-          <div className="p-3 border-t border-slate-100 text-center text-xs text-slate-400 bg-slate-50/30 cursor-pointer hover:bg-slate-50 transition-colors">
-            View full portfolio →
-          </div>
+       
         </div>
       ))}
     </div>

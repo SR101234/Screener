@@ -73,6 +73,18 @@ const Tablenav = () => {
           fontWeight="bold"
           fontFamily="Montserrat"
           fontSize={["sm", "md"]}
+          onClick={() => navigate("/FundComparison")}
+          _hover={{ color: "#838383ff" }}
+        >
+          Fund Comparison
+        </Button>
+        <Button
+       mr="40px"
+          variant="ghost"
+          color="#000000ff"
+          fontWeight="bold"
+          fontFamily="Montserrat"
+          fontSize={["sm", "md"]}
           onClick={() => window.open("https://www.suigenerisconsulting.com/contact_us.php", "_blank")}
           _hover={{ color: "#838383ff"}}
         >

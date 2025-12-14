@@ -73,6 +73,8 @@ const FundPage = () => {
   const location = useLocation();
   const [fundName, setFundName] = useState({});
   const [rows, setRows] = useState([]);
+  // 1. Add a dedicated loading state
+  const [loading, setLoading] = useState(true);
   const isMobile = window.innerWidth <= 480;
 
   const getFilteredGraph = (range, graphData = []) => {
@@ -122,34 +124,58 @@ const FundPage = () => {
   ];
 
   useEffect(() => {
-     const search = location.search;
-  const query = new URLSearchParams(search);
-  const queryID = query.get("id");
-  console.log(queryID);
-
+    const search = location.search;
+    const query = new URLSearchParams(search);
+    const queryID = query.get("id");
+    console.log(queryID);
 
     const openpage = async () => {
-      const response = await fetch(import.meta.env.VITE_BACKEND + `/MFInfo`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ code: queryID }),
-      });
-      const res = await response.json();
-      setRows(res.asset);
-      setFundName(res);
-      const fullGraph = res.graph || [];
-      setFilteredGraphData(getFilteredGraph("Max", fullGraph));
+      try {
+        // 2. Set loading to true before fetching
+        setLoading(true);
+        
+        const response = await fetch(import.meta.env.VITE_BACKEND + `/MFInfo`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ code: queryID }),
+        });
+        const res = await response.json();
+        setRows(res.asset);
+        setFundName(res);
+        const fullGraph = res.graph || [];
+        setFilteredGraphData(getFilteredGraph("Max", fullGraph));
+      } catch (error) {
+        console.error("Error fetching fund data:", error);
+      } finally {
+        // 3. Set loading to false after fetch (success or failure)
+        setLoading(false);
+      }
     };
-    openpage();
+    
+    if (queryID) {
+        openpage();
+    }
   }, [location.search]);
 
   return (
     <>
-    <div className="outerBody" style={{backgroundColor:"white"}}>
+    <div className="outerBody" style={{backgroundColor:"white", minHeight: "100vh"}}>
       {/* Navbar */}
       <Tablenav />
 
-      {fundName.MFName ? (
+      {/* 4. Use the loading state to conditionally render */}
+      {loading ? (
+         <Flex 
+           justify="center" 
+           align="center" 
+           h="80vh" 
+           direction="column" 
+           gap={4}
+         >
+           <Spinner size="xl" thickness="4px" speed="0.65s" emptyColor="gray.200" color="blue.500" />
+           <Text fontSize="lg" color="gray.500" fontWeight="medium">Fetching Fund Data...</Text>
+         </Flex>
+      ) : fundName.MFName ? (
         <Box px={{ base: 4, md: "10%" }} py={0}>
           {/* Fund Header */}
           <Typography
@@ -297,8 +323,8 @@ const FundPage = () => {
           </Box>
         </Box>
       ) : (
-        <Flex justify="center" py={40}>
-          <Spinner size="xl" color="teal.400" />
+        <Flex justify="center" align="center" h="50vh">
+           <Text fontSize="lg" color="red.500">Failed to load data. Please try again.</Text>
         </Flex>
       )}
 

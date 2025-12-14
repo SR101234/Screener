@@ -1,33 +1,75 @@
 import React, { useState, useMemo } from 'react';
-import { TIME_RANGES } from './constants';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from 'recharts';
 
-const ComparisonChart = ({ funds }) => {
+// 1. Define ranges internally to ensure they match the switch case logic
+const TIME_RANGES = ['1M', '6M', '1Y', '3Y', '5Y', 'ALL'];
+
+const ComparisonChart = ({ data }) => {
   const [range, setRange] = useState('1Y');
 
   const chartData = useMemo(() => {
-    let days = 365;
-    if (range === '5D') days = 5;
-    if (range === '1M') days = 30;
-    if (range === '6M') days = 180;
-    if (range === '1Y') days = 365;
+    // Safety check: ensure data is an array
+    if (!Array.isArray(data) || !data.length) return [];
 
-    const primaryFund = funds[0];
-    if (!primaryFund) return [];
+    const primaryFund = data[0];
+    if (!primaryFund?.graph) return [];
 
-    const slicedData = primaryFund.history.slice(-days).map((point, index) => {
-      const entry = { date: point.date };
-      funds.forEach(f => {
-        const fPoint = f.history[f.history.length - days + index];
-        if (fPoint) {
-          entry[f.id] = fPoint.value;
-        }
+    // 2. Calculate the "Cutoff Date"
+    const now = new Date();
+    // Clone 'now' so we don't modify the original date object
+    const cutoffDate = new Date(now.getTime()); 
+
+    switch (range) {
+      case '1M': cutoffDate.setMonth(now.getMonth() - 1); break;
+      case '6M': cutoffDate.setMonth(now.getMonth() - 6); break;
+      case '1Y': cutoffDate.setFullYear(now.getFullYear() - 1); break;
+      case '3Y': cutoffDate.setFullYear(now.getFullYear() - 3); break;
+      case '5Y': cutoffDate.setFullYear(now.getFullYear() - 5); break;
+      case 'ALL': cutoffDate.setFullYear(1900); break; // Go back to the beginning
+      default: cutoffDate.setFullYear(now.getFullYear() - 1); // Default fall-back
+    }
+
+    // 3. Create Fast Lookup Maps for secondary funds (Performance Fix)
+    const fundLookups = data.slice(1).map(fund => {
+      const valueMap = new Map();
+      fund.graph.forEach(point => {
+        const dateKey = point.date.split('T')[0]; // Key: "YYYY-MM-DD"
+        valueMap.set(dateKey, point.value);
       });
-      return entry;
+      return { name: fund.MFName, map: valueMap };
     });
 
-    return slicedData;
-  }, [funds, range]);
+    // 4. Build the result array
+    const result = [];
+    
+    // Iterate through primary fund history
+    for (const point of primaryFund.graph) {
+      const pointDate = new Date(point.date);
+      
+      // Filter: Only add points NEWER than the cutoff date
+      if (pointDate >= cutoffDate) {
+        const dateKey = point.date.split('T')[0];
+        
+        const entry = {
+          date: point.date, // keep original ISO string for sorting/display
+          [primaryFund.MFName]: point.value
+        };
+
+        // Add values from other funds if they exist on this date
+        fundLookups.forEach(lookup => {
+          if (lookup.map.has(dateKey)) {
+            entry[lookup.name] = lookup.map.get(dateKey);
+          }
+        });
+
+        result.push(entry);
+      }
+    }
+
+    // 5. Sort by Date Ascending (Important for LineChart continuity)
+    return result.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+  }, [data, range]);
 
   const getColor = (theme) => {
     switch (theme) {
@@ -38,6 +80,8 @@ const ComparisonChart = ({ funds }) => {
     }
   };
 
+  if (!data || !data.length) return <div className="p-4 text-slate-500">No data available</div>;
+
   return (
     <div className="glass-panel rounded-2xl p-6 md:p-8 shadow-sm">
       <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
@@ -46,6 +90,7 @@ const ComparisonChart = ({ funds }) => {
           <p className="text-slate-500 text-sm mt-1">Growth of investment over time</p>
         </div>
 
+        {/* Range Selector Buttons */}
         <div className="flex flex-wrap justify-center gap-1 bg-slate-100/50 p-1.5 rounded-xl border border-slate-200">
           {TIME_RANGES.map((r) => (
             <button
@@ -71,13 +116,15 @@ const ComparisonChart = ({ funds }) => {
               dataKey="date"
               tickFormatter={(val) => {
                 const d = new Date(val);
-                return `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}`;
+                // Smart formatting based on range
+                if (range === '1M' || range === '5D') return `${d.getDate()} ${d.toLocaleString('default', { month: 'short' })}`;
+                return `${d.toLocaleString('default', { month: 'short' })} '${d.getFullYear().toString().slice(2)}`;
               }}
               stroke="#94a3b8"
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              minTickGap={30}
+              minTickGap={40}
             />
             <YAxis
               domain={['auto', 'auto']}
@@ -85,30 +132,33 @@ const ComparisonChart = ({ funds }) => {
               fontSize={12}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(val) => `$${val}`}
+              tickFormatter={(val) => `${val}`}
             />
             <Tooltip
               contentStyle={{
-                backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                backgroundColor: 'rgba(255, 255, 255, 0.95)',
                 backdropFilter: 'blur(8px)',
                 borderRadius: '12px',
                 border: 'none',
                 boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1)'
               }}
               labelStyle={{ color: '#64748b', marginBottom: '0.5rem', fontSize: '12px' }}
+              labelFormatter={(label) => new Date(label).toLocaleDateString(undefined, { dateStyle: 'medium' })}
               itemStyle={{ fontSize: '14px', fontWeight: 600, padding: 0 }}
             />
             <Legend wrapperStyle={{ paddingTop: '20px' }} />
-            {funds.map((fund) => (
+            
+            {data.map((fund) => (
               <Line
-                key={fund.id}
+                key={fund.MFName}
                 type="monotone"
-                dataKey={fund.id}
-                name={fund.name}
+                dataKey={fund.MFName}
+                name={fund.MFName}
                 stroke={getColor(fund.colorTheme)}
-                strokeWidth={3}
+                strokeWidth={2.5}
                 dot={false}
                 activeDot={{ r: 6, strokeWidth: 0 }}
+                isAnimationActive={false} // Improves performance when switching ranges
               />
             ))}
           </LineChart>
