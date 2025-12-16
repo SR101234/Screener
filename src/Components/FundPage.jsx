@@ -17,13 +17,13 @@ import {
   YAxis,
   Tooltip,
 } from "recharts";
-import { useLocation, useParams } from "react-router-dom"; 
+import { useLocation, useParams } from "react-router-dom";
 import Tablenav from "./Tablenav";
 import Heatmap from "./Heatmap";
 import Footer from "./Footer";
 
 const ChartWrapper = ({ data }) => {
-  
+
   const containerRef = useRef(null);
   const [width, setWidth] = useState(350);
 
@@ -34,7 +34,7 @@ const ChartWrapper = ({ data }) => {
       }
     };
     updateWidth();
-    
+
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
@@ -133,7 +133,7 @@ const FundPage = () => {
       try {
         // 2. Set loading to true before fetching
         setLoading(true);
-        
+
         const response = await fetch(import.meta.env.VITE_BACKEND + `/api/MFinfo`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -151,187 +151,186 @@ const FundPage = () => {
         setLoading(false);
       }
     };
-    
+
     if (queryID) {
-        openpage();
+      openpage();
     }
   }, [location.search]);
 
   return (
     <>
-    <div className="outerBody" style={{backgroundColor:"white", minHeight: "100vh"}}>
-      {/* Navbar */}
-      <Tablenav />
+      <div className="outerBody" style={{ backgroundColor: "white", minHeight: "100vh" }}>
+        {/* Navbar */}
+        <Tablenav />
 
-      {/* 4. Use the loading state to conditionally render */}
-      {loading ? (
-         <Flex 
-           justify="center" 
-           align="center" 
-           h="80vh" 
-           direction="column" 
-           gap={4}
-         >
-           <Spinner size="xl" thickness="4px" speed="0.65s" emptyColor="gray.200" color="blue.500" />
-           <Text fontSize="lg" color="gray.500" fontWeight="medium">Fetching Fund Data...</Text>
-         </Flex>
-      ) : fundName.MFName ? (
-        <Box px={{ base: 4, md: "10%" }} py={0}>
-          {/* Fund Header */}
-          <Typography
-            variant={isMobile ? "h5" : "h4"}
-            gutterBottom
-            textAlign="center"
-            fontWeight="bold"
-            mb={0}
-          >
-            {fundName.MFName}
-          </Typography>
-
-          <Typography
-            variant={isMobile ? "h6" : "h5"}
-            gutterBottom
-            textAlign="left"
-            mb={1}
-            fontWeight="semibold"
-          >
-            Stocks Performance :
-          </Typography>
-          <Box mb={15} borderRadius="xl" boxShadow="lg">
-            <Heatmap heatmapData={fundName.heatmap || []} />
-          </Box>
-
-          {/* Holdings Table */}
-          <Typography
-            variant={isMobile ? "h6" : "h5"}
-            gutterBottom
-            textAlign="left"
-            mb={2}
-            fontWeight="semibold"
-          >
-            Holdings:
-          </Typography>
-          <Box
-            mb={10}
-            borderRadius="xl"
-            boxShadow="lg"
-            overflow="auto"
-            maxHeight={520}
-          >
-            <DataGrid
-              rows={rows}
-              columns={columns}
-              getRowId={(row) => row.isin}
-              pageSize={10}
-              rowsPerPageOptions={[10]}
-              hideFooter={true}
-              rowHeight={50}
-              sx={{
-                fontFamily: "'Montserrat', sans-serif",
-                "& .MuiDataGrid-row:hover": {
-                  backgroundColor: "#6e27ff20",
-                },
-                "& .MuiDataGrid-columnHeaders": {
-                  backgroundColor: "#6e27ff18",
-                  fontWeight: "bold",
-                },
-              }}
-            />
-          </Box>
-
-          {/* Fund Info Cards */}
+        {/* 4. Use the loading state to conditionally render */}
+        {loading ? (
           <Flex
-            wrap="wrap"
-            justify="space-around"
-            gap={6}
-            mb={10}
+            justify="center"
+            align="center"
+            h="80vh"
+            direction="column"
+            gap={4}
           >
-            {[
-              { label: "NAV", value: fundName.nav },
-              { label: "Inception Date", value: fundName.inception },
-              { label: "%NAV Change", value: fundName.change },
-              { label: "CAGR", value: fundName.cagr },
-              { label: "Expense Ratio", value: fundName.ter },
-            ].map((item, i) => (
-              <Box
-                key={i}
-                minW="150px"
-                py={4}
-                px={6}
-                bg="whiteAlpha.800"
-                backdropFilter="blur(10px)"
-                borderRadius="2xl"
-                boxShadow="xl"
-                textAlign="center"
-                transition="all 0.3s"
-                _hover={{ transform: "scale(1.05)", boxShadow: "2xl" }}
-              >
-                <Text fontSize="sm" fontWeight="semibold" color="gray.600">
-                  {item.label}
-                </Text>
-                <Text fontSize="lg" fontWeight="bold">
-                  {item.value}
-                </Text>
-              </Box>
-            ))}
+            <Spinner size="xl" thickness="4px" speed="0.65s" emptyColor="gray.200" color="blue.500" />
+            <Text fontSize="lg" color="gray.500" fontWeight="medium">Fetching Fund Data...</Text>
           </Flex>
+        ) : fundName.MFName ? (
+          <Box px={{ base: 4, md: "10%" }} py={0}>
+            {/* Fund Header */}
+            <Typography
+              variant={isMobile ? "h5" : "h4"}
+              gutterBottom
+              textAlign="center"
+              fontWeight="bold"
+              mb={0}
+            >
+              {fundName.MFName}
+            </Typography>
 
-          {/* Range Selector */}
-          <Flex justify="center" gap={2} wrap="wrap" mb={10}>
-            {["5D", "1M", "6M", "YTD", "1Y", "3Y", "5Y", "Max"].map((range) => (
-              <Button
-                key={range}
-                size="sm"
-                bg={selectedRange === range ? "teal.400" : "gray.100"}
-                color={selectedRange === range ? "white" : "gray.700"}
-                borderRadius="xl"
-                _hover={{
-                  bg: selectedRange === range ? "teal.500" : "gray.200",
+            <Typography
+              variant={isMobile ? "h6" : "h5"}
+              gutterBottom
+              textAlign="left"
+              mb={1}
+              fontWeight="semibold"
+            >
+              Stocks Performance :
+            </Typography>
+            <Box mb={15} borderRadius="xl" boxShadow="lg">
+              <Heatmap heatmapData={fundName.heatmap || []} />
+            </Box>
+
+            {/* Holdings Table */}
+            <Typography
+              variant={isMobile ? "h6" : "h5"}
+              gutterBottom
+              textAlign="left"
+              mb={2}
+              fontWeight="semibold"
+            >
+              Holdings:
+            </Typography>
+            <Box
+              mb={10}
+              borderRadius="xl"
+              boxShadow="lg"
+              overflow="auto"
+              maxHeight={520}
+            >
+              <DataGrid
+                rows={rows}
+                columns={columns}
+                getRowId={(row) => row.isin}
+                pageSize={10}
+                rowsPerPageOptions={[10]}
+                hideFooter={true}
+                rowHeight={50}
+                sx={{
+                  fontFamily: "'Montserrat', sans-serif",
+                  "& .MuiDataGrid-row:hover": {
+                    backgroundColor: "#6e27ff20",
+                  },
+                  "& .MuiDataGrid-columnHeaders": {
+                    backgroundColor: "#6e27ff18",
+                    fontWeight: "bold",
+                  },
                 }}
-                onClick={() => {
-                  setSelectedRange(range);
-                  setFilteredGraphData(
-                    getFilteredGraph(range, fundName.graph || [])
-                  );
-                }}
-              >
-                {range}
-              </Button>
-            ))}
-          </Flex>
+              />
+            </Box>
 
-          {/* Chart */}
-          <ChartWrapper data={filteredGraphData} />
+            {/* Fund Info Cards */}
+            <Flex
+              wrap="wrap"
+              justify="space-around"
+              gap={6}
+              mb={10}
+            >
+              {[
+                { label: "NAV", value: fundName.nav },
+                { label: "Inception Date", value: fundName.inception },
+                { label: "%NAV Change", value: fundName.change },
+                { label: "CAGR", value: fundName.cagr },
+                { label: "Expense Ratio", value: fundName.ter },
+              ].map((item, i) => (
+                <Box
+                  key={i}
+                  minW="150px"
+                  py={4}
+                  px={6}
+                  bg="#ffffff"
+                  borderRadius="2xl"
+                  boxShadow="0 10px 30px rgba(0,0,0,0.15)"
+                  textAlign="center"
+                  transition="all 0.3s"
+                  _hover={{ transform: "scale(1.05)" }}
+                >
+                  <Text fontSize="sm" fontWeight="600" color="#555555">
+                    {item.label}
+                  </Text>
+                  <Text fontSize="lg" fontWeight="700" color="#111111">
+                    {item.value}
+                  </Text>
+                </Box>
+              ))}
+            </Flex>
 
-          {/* Exit Load */}
-          <Box
-            bg="whiteAlpha.800"
-            py={6}
-            px={6}
-            borderRadius="2xl"
-            boxShadow="xl"
-            mb={20}
-            transition="all 0.3s"
-            _hover={{ transform: "scale(1.03)", boxShadow: "2xl" }}
-          >
-            <Text fontWeight="semibold" mb={2}>
-              Exit Load:
-            </Text>
-            <Text fontSize="lg" fontWeight="bold">
-              {fundName.exitload}
-            </Text>
+            {/* Range Selector */}
+            <Flex justify="center" gap={2} wrap="wrap" mb={10}>
+              {["5D", "1M", "6M", "YTD", "1Y", "3Y", "5Y", "Max"].map((range) => (
+                <Button
+                  key={range}
+                  size="sm"
+                  bg={selectedRange === range ? "teal.400" : "gray.100"}
+                  color={selectedRange === range ? "white" : "gray.700"}
+                  borderRadius="xl"
+                  _hover={{
+                    bg: selectedRange === range ? "teal.500" : "gray.200",
+                  }}
+                  onClick={() => {
+                    setSelectedRange(range);
+                    setFilteredGraphData(
+                      getFilteredGraph(range, fundName.graph || [])
+                    );
+                  }}
+                >
+                  {range}
+                </Button>
+              ))}
+            </Flex>
+
+            {/* Chart */}
+            <ChartWrapper data={filteredGraphData} />
+
+            {/* Exit Load */}
+            <Box
+              bg="#ffffff"
+              py={6}
+              px={6}
+              borderRadius="2xl"
+              boxShadow="0 10px 30px rgba(0,0,0,0.15)"
+              mb={20}
+              transition="all 0.3s"
+              _hover={{ transform: "scale(1.03)", boxShadow: "2xl" }}
+            >
+              <Text fontWeight="semibold" mb={2}>
+                Exit Load:
+              </Text>
+              <Text fontSize="lg" fontWeight="bold">
+                {fundName.exitload}
+              </Text>
+            </Box>
           </Box>
-        </Box>
-      ) : (
-        <Flex justify="center" align="center" h="50vh">
-           <Text fontSize="lg" color="red.500">Failed to load data. Please try again.</Text>
-        </Flex>
-      )}
+        ) : (
+          <Flex justify="center" align="center" h="50vh">
+            <Text fontSize="lg" color="red.500">Failed to load data. Please try again.</Text>
+          </Flex>
+        )}
 
-      {/* Footer */}
-      <Box mt={6}>
-        <Footer />
-      </Box>
+        {/* Footer */}
+        <Box mt={6}>
+          <Footer />
+        </Box>
       </div>
     </>
   );
