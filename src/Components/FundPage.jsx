@@ -54,7 +54,22 @@ const ChartWrapper = ({ data }) => {
           tickFormatter={(d) => new Date(d).getFullYear()}
         />
         <YAxis tickLine={false} />
-        <Tooltip />
+        <Tooltip
+          contentStyle={{
+            backgroundColor: "#ffffff",
+            border: "1px solid #e0e0e0",
+            borderRadius: "8px",
+            color: "#000000",
+          }}
+          labelStyle={{
+            color: "#000000",
+            fontWeight: 600,
+          }}
+          itemStyle={{
+            color: "#000000",
+            fontWeight: 500,
+          }}
+        />
         <Area
           type="monotone"
           dataKey="nav"
@@ -304,7 +319,7 @@ const FundPage = () => {
 
             {/* Chart */}
             <div color="black">
-            <ChartWrapper data={filteredGraphData} />
+              <ChartWrapper data={filteredGraphData} />
             </div>
 
             {/* Exit Load */}
