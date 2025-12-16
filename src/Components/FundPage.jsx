@@ -134,7 +134,7 @@ const FundPage = () => {
         // 2. Set loading to true before fetching
         setLoading(true);
         
-        const response = await fetch(import.meta.env.VITE_BACKEND + `/MFInfo`, {
+        const response = await fetch(import.meta.env.VITE_BACKEND + `/api/MFinfo`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ code: queryID }),
