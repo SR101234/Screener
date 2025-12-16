@@ -171,7 +171,7 @@ function FundComparison({ params: initialParams }) {
       try {
         const responses = await Promise.all(
           comparisonParams.map(p =>
-            fetch(import.meta.env.VITE_BACKEND + `/MFInfo`, {
+            fetch(import.meta.env.VITE_BACKEND + `/api/MFinfo`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
               body: JSON.stringify({ code: p.id }),
