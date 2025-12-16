@@ -183,6 +183,7 @@ const FundPage = () => {
               gutterBottom
               textAlign="center"
               fontWeight="bold"
+              color="black"
               mb={0}
             >
               {fundName.MFName}
@@ -192,6 +193,7 @@ const FundPage = () => {
               variant={isMobile ? "h6" : "h5"}
               gutterBottom
               textAlign="left"
+              color="black"
               mb={1}
               fontWeight="semibold"
             >
@@ -208,6 +210,7 @@ const FundPage = () => {
               textAlign="left"
               mb={2}
               fontWeight="semibold"
+              color="black"
             >
               Holdings:
             </Typography>
@@ -313,10 +316,10 @@ const FundPage = () => {
               transition="all 0.3s"
               _hover={{ transform: "scale(1.03)", boxShadow: "2xl" }}
             >
-              <Text fontWeight="semibold" mb={2}>
+              <Text fontWeight="semibold" mb={2} color={"black"}>
                 Exit Load:
               </Text>
-              <Text fontSize="lg" fontWeight="bold">
+              <Text fontSize="lg" fontWeight="bold" color={"black"}>
                 {fundName.exitload}
               </Text>
             </Box>
