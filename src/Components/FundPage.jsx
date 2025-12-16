@@ -303,7 +303,9 @@ const FundPage = () => {
             </Flex>
 
             {/* Chart */}
+            <div color="black">
             <ChartWrapper data={filteredGraphData} />
+            </div>
 
             {/* Exit Load */}
             <Box
