@@ -2,7 +2,29 @@ import React from 'react';
 import { PieChart, Pie, Cell } from 'recharts';
 
 const HoldingsTable = ( funds ) => {
-  console.log(funds.funds);
+  const getTopSector = (assets = []) => {
+  if (!assets.length) return "-";
+
+  const sectorMap = {};
+
+  assets.forEach(({ sector, perc }) => {
+    if (!sector) return;
+    sectorMap[sector] = (sectorMap[sector] || 0) + Number(perc || 0);
+  });
+
+  let topSector = "-";
+  let maxPerc = 0;
+
+  for (const [sector, total] of Object.entries(sectorMap)) {
+    if (total > maxPerc) {
+      maxPerc = total;
+      topSector = sector;
+    }
+  }
+
+  return topSector;
+};
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {funds.funds.map((fund) => (
@@ -30,7 +52,7 @@ const HoldingsTable = ( funds ) => {
               <span>
                 Top Sector:{' '}
                 <strong className="text-slate-700">
-                  {fund.asset[0].sector}
+                  {getTopSector(fund.asset)}
                 </strong>
               </span>
               <span>
