@@ -1,43 +1,45 @@
 import React from 'react';
-import { PieChart, Pie, Cell } from 'recharts';
 
-const HoldingsTable = ( funds ) => {
+const HoldingsTable = (funds) => {
   const getTopSector = (assets = []) => {
-  if (!assets.length) return "-";
+    if (!assets.length) return "-";
 
-  const sectorMap = {};
+    const sectorMap = {};
 
-  assets.forEach(({ sector, perc }) => {
-    if (!sector) return;
-    sectorMap[sector] = (sectorMap[sector] || 0) + Number(perc || 0);
-  });
+    assets.forEach(({ sector, perc }) => {
+      if (!sector) return;
+      sectorMap[sector] = (sectorMap[sector] || 0) + Number(perc || 0);
+    });
 
-  let topSector = "-";
-  let maxPerc = 0;
+    let topSector = "-";
+    let maxPerc = 0;
 
-  for (const [sector, total] of Object.entries(sectorMap)) {
-    if (total > maxPerc) {
-      maxPerc = total;
-      topSector = sector;
+    for (const [sector, total] of Object.entries(sectorMap)) {
+      if (total > maxPerc) {
+        maxPerc = total;
+        topSector = sector;
+      }
     }
-  }
 
-  return topSector;
-};
+    return topSector;
+  };
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {funds.funds.map((fund) => (
-        
         <div
           key={fund.MFName}
           className="glass-panel rounded-2xl overflow-hidden flex flex-col h-full shadow-sm"
         >
           {/* Header */}
           <div className="p-5 border-b border-slate-100 bg-white/40">
-            <h3 className="font-bold text-slate-800 flex items-center gap-2">
+            {/* FIX APPLIED:
+               1. items-start: Aligns the colored pill to the top (instead of center) so it looks good with 2 lines.
+               2. min-h-[3.5rem]: Forces the header to always be tall enough for 2 lines of text.
+            */}
+            <h3 className="font-bold text-slate-800 flex items-start gap-2 min-h-[3.5rem]">
               <span
-                className={`w-2 h-8 rounded-full ${
+                className={`w-2 h-8 rounded-full flex-shrink-0 mt-0.5 ${
                   fund.colorTheme === 'purple'
                     ? 'bg-fintech-purple'
                     : fund.colorTheme === 'teal'
@@ -45,7 +47,10 @@ const HoldingsTable = ( funds ) => {
                     : 'bg-fintech-gold'
                 }`}
               ></span>
-              {fund.MFName}
+              {/* Added line-clamp-2 to handle very long text gracefully */}
+              <span className="line-clamp-2 leading-tight py-1">
+                {fund.MFName}
+              </span>
             </h3>
 
             <div className="mt-4 flex justify-between items-center text-xs text-slate-500">
@@ -109,8 +114,6 @@ const HoldingsTable = ( funds ) => {
               </tbody>
             </table>
           </div>
-
-       
         </div>
       ))}
     </div>
