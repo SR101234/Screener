@@ -26,7 +26,7 @@ function useDebounce(value, delay = 400) {
 
 const assetClassOptions = ["Equity", "Debt", "Solution Oriented", "Other", "Hybrid"];
 const categoryOptions = [
-  "Large Cap", "Mid Cap", "Small Cap", "Multi Cap","Flexi Cap", "Retirement", "Contra", "Value", "Focused", "Banking and PSU", "FoF", "Multi Asset", "Sectoral: Auto", "Sectoral: Other"
+ 'Aggressive Hybrid Fund', 'Arbitrage Fund', 'Balanced Hybrid Fund', 'Banking and PSU Fund', 'Childrens Fund', 'Conservative Hybrid Fund', 'Contra Fund', 'Corporate Bond Fund', 'Credit Risk Fund', 'Debt Index Funds', 'Dividend Yield Fund', 'Dynamic Asset Allocation or Balanced Advantage', 'Dynamic Bond', 'ELSS', 'Equity', 'Equity Index Funds', 'Equity Savings', 'Flexi Cap Fund', 'Floater Fund', 'FoFs Domestic', 'FoFs Overseas', 'Focused Fund', 'Gilt Fund', 'Gilt Fund with 10 year Constant duration', 'Large & Mid Cap Fund', 'Large Cap Fund', 'Liquid Fund', 'Long Duration Fund', 'Low Duration Fund', 'Medium Duration Fund', 'Medium to Long Duration Fund', 'Mid Cap Fund', 'Money Market Fund', 'Multi Asset Allocation', 'Multi Cap Fund', 'Overnight Fund', 'Passive ELSS', 'Retirement Fund', 'Sectoral: Auto', 'Sectoral: Banking', 'Sectoral: FMCG', 'Sectoral: Foreign Equity', 'Sectoral: Infotech', 'Sectoral: Other Sectoral', 'Sectoral: Pharma', 'Short Duration Fund', 'Small Cap Fund', 'Ultra Short Duration Fund', 'Value Fund'
 ];
 const MenuProps = {
   PaperProps: { style: { maxHeight: 220, width: 250 } }
