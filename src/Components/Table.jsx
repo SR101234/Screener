@@ -149,7 +149,7 @@ export default function Table() {
     },
     { 
         field: "pe", 
-        headerName: "P/E", 
+        headerName: "ExpRatio", 
         type: "number", 
         flex: 0.5, 
         minWidth: 80,
