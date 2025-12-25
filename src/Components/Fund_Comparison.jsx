@@ -275,7 +275,8 @@ function FundComparison({ params: initialParams }) {
                         <div key={fund.MFName} className="w-full">
                         <div className="border rounded-lg p-6 shadow-sm bg-white hover:shadow-md transition-shadow">
                             <h2 className="text-xl font-bold text-slate-800 mb-6 text-center border-b pb-4">{fund.MFName}</h2>
-                            <Heatmap heatmapData={fund.heatmap} />
+                            {fund.heatmap.length>0 ? <Heatmap heatmapData={fund.heatmap} /> : <p className="text-center text-slate-500">No data available.</p>}
+                            
                         </div>
                         </div>
                     ))}
