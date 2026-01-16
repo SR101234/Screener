@@ -52,17 +52,17 @@ export default function Table() {
 
   // Fetch data from backend
   useEffect(() => {
-    const cached = localStorage.getItem("mfData");
+    // const cached = localStorage.getItem("mfData");
 
-    if (cached) {
-      const parsed = JSON.parse(cached);
-      if (Date.now() - parsed.time < 86400) {
-        setRows(parsed.data);
-        setFilteredRows(parsed.data);
-        setLoading(false);
-        return;
-      }
-    }
+    // if (cached) {
+    //   const parsed = JSON.parse(cached);
+    //   if (Date.now() - parsed.time < 86400) {
+    //     setRows(parsed.data);
+    //     setFilteredRows(parsed.data);
+    //     setLoading(false);
+    //     return;
+    //   }
+    // }
 
     const fetchData = async () => {
       try {
