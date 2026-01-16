@@ -56,7 +56,7 @@ export default function Table() {
 
     if (cached) {
       const parsed = JSON.parse(cached);
-      if (Date.now() - parsed.time < 86400000) {
+      if (Date.now() - parsed.time < 86400) {
         setRows(parsed.data);
         setFilteredRows(parsed.data);
         setLoading(false);
