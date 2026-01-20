@@ -8,7 +8,8 @@ const HoldingsTable = (funds) => {
 
     assets.forEach(({ sector, perc }) => {
       if (!sector) return;
-      sectorMap[sector] = (sectorMap[sector] || 0) + Number(perc || 0);
+      const validPerc = Math.max(0, Number(perc || 0)); 
+      sectorMap[sector] = (sectorMap[sector] || 0) + validPerc;
     });
 
     let topSector = "-";
@@ -33,10 +34,6 @@ const HoldingsTable = (funds) => {
         >
           {/* Header */}
           <div className="p-5 border-b border-slate-100 bg-white/40">
-            {/* FIX APPLIED:
-               1. items-start: Aligns the colored pill to the top (instead of center) so it looks good with 2 lines.
-               2. min-h-[3.5rem]: Forces the header to always be tall enough for 2 lines of text.
-            */}
             <h3 className="font-bold text-slate-800 flex items-start gap-2 min-h-[3.5rem]">
               <span
                 className={`w-2 h-8 rounded-full flex-shrink-0 mt-0.5 ${
@@ -47,7 +44,6 @@ const HoldingsTable = (funds) => {
                     : 'bg-fintech-gold'
                 }`}
               ></span>
-              {/* Added line-clamp-2 to handle very long text gracefully */}
               <span className="line-clamp-2 leading-tight py-1">
                 {fund.MFName}
               </span>
@@ -63,7 +59,7 @@ const HoldingsTable = (funds) => {
               <span>
                 Assets:{' '}
                 <strong className="text-slate-700">
-                  {fund.asset.length}
+                  {fund.asset.filter(a => Number(a.perc) >= 0).length}
                 </strong>
               </span>
             </div>
@@ -81,36 +77,44 @@ const HoldingsTable = (funds) => {
               </thead>
 
               <tbody className="divide-y divide-slate-100">
-                {fund.asset.map((h, idx) => (
-                  <tr
-                    key={idx}
-                    className="hover:bg-slate-50/50 transition-colors"
-                  >
-                    <td className="px-5 py-3 font-medium text-slate-700">
-                      {h.name}
-                    </td>
+                {[...fund.asset]
+                  .filter(h => Number(h.perc) >= 0) 
+                  .sort((a, b) => Number(b.perc) - Number(a.perc))
+                  .map((h, idx) => (
+                    <tr
+                      key={idx}
+                      className="hover:bg-slate-50/50 transition-colors cursor-default"
+                      // UPDATED: Added title here so hovering anywhere on the row shows the full name
+                      title={h.name} 
+                    >
+                      <td className="px-5 py-3 font-medium text-slate-700">
+                        {/* Name truncated to 10 chars + '...' */}
+                        {h.name && h.name.length > 10 
+                          ? `${h.name.substring(0, 10)}...` 
+                          : h.name}
+                      </td>
 
-                    <td className="px-5 py-3 text-slate-500 text-xs">
-                      {h.sector}
-                    </td>
+                      <td className="px-5 py-3 text-slate-500 text-xs">
+                        {h.sector}
+                      </td>
 
-                    <td className="px-5 py-3 text-right font-semibold text-slate-700">
-                      {h.perc}%
-                      <div className="w-full bg-slate-100 h-1 mt-1 rounded-full overflow-hidden">
-                        <div
-                          className={`h-full ${
-                            fund.colorTheme === 'purple'
-                              ? 'bg-fintech-purple'
-                              : fund.colorTheme === 'teal'
-                              ? 'bg-fintech-teal'
-                              : 'bg-fintech-gold'
-                          }`}
-                          style={{ width: `${h.perc * 5}%` }}
-                        ></div>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                      <td className="px-5 py-3 text-right font-semibold text-slate-700">
+                        {h.perc}%
+                        <div className="w-full bg-slate-100 h-1 mt-1 rounded-full overflow-hidden">
+                          <div
+                            className={`h-full ${
+                              fund.colorTheme === 'purple'
+                                ? 'bg-fintech-purple'
+                                : fund.colorTheme === 'teal'
+                                ? 'bg-fintech-teal'
+                                : 'bg-fintech-gold'
+                            }`}
+                            style={{ width: `${h.perc * 5}%` }}
+                          ></div>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
