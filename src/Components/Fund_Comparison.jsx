@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Text, VStack } from '@chakra-ui/react';
 import { CircularProgress } from '@mui/material';
-import { Search, Plus, X, CheckCircle, Filter } from 'lucide-react'; 
+import { Search, Plus, X, CheckCircle, Filter, ChevronLeft, ChevronRight } from 'lucide-react'; 
 
 // --- Import your existing sub-components ---
 import FundCard from './FundCard';
@@ -151,11 +151,17 @@ function FundComparison({ params: initialParams }) {
   const [comparisonParams, setComparisonParams] = useState(initialParams || []);
   const [data, setData] = useState([]);
   const [showSelectionScreen, setShowSelectionScreen] = useState(false);
-  
-  // 1. ADD LOADING STATE
   const [isLoading, setIsLoading] = useState(false); 
+  
+  // State for Heatmap Slideshow
+  const [activeHeatmapIndex, setActiveHeatmapIndex] = useState(0);
 
   const themes = ["purple", "teal", "gold"];
+
+  // Reset heatmap index when data changes
+  useEffect(() => {
+    setActiveHeatmapIndex(0);
+  }, [comparisonParams]);
 
   useEffect(() => {
     const fetchFunds = async () => {
@@ -165,7 +171,6 @@ function FundComparison({ params: initialParams }) {
         return;
       }
 
-      // 2. SET LOADING TRUE BEFORE FETCH
       setIsLoading(true); 
 
       try {
@@ -188,7 +193,6 @@ function FundComparison({ params: initialParams }) {
       } catch (err) {
         console.error("Error fetching funds:", err);
       } finally {
-        // 3. SET LOADING FALSE AFTER FETCH (Success or Fail)
         setIsLoading(false); 
       }
     };
@@ -198,7 +202,15 @@ function FundComparison({ params: initialParams }) {
   const handleUpdateFunds = (newParams) => {
     setComparisonParams(newParams);
     setShowSelectionScreen(false);
-    // Note: useEffect will trigger immediately after this because comparisonParams changed
+  };
+
+  // Slideshow Handlers
+  const handleNextHeatmap = () => {
+    setActiveHeatmapIndex((prev) => (prev + 1) % data.length);
+  };
+
+  const handlePrevHeatmap = () => {
+    setActiveHeatmapIndex((prev) => (prev - 1 + data.length) % data.length);
   };
 
   return (
@@ -214,7 +226,6 @@ function FundComparison({ params: initialParams }) {
         />
       )}
 
-      {/* 4. CONDITIONAL RENDERING: CHECK LOADING FIRST */}
       {isLoading ? (
         <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
           <VStack colorPalette="teal">
@@ -268,24 +279,57 @@ function FundComparison({ params: initialParams }) {
                     <ComparisonChart data={data} />
                 </section>
 
+                {/* SLIDESHOW HEATMAP SECTION */}
                 <section className="w-full">
-                    <h2 className="text-2xl font-bold text-slate-800 mb-6">Monthly Performance Heatmaps</h2>
-                    <div className="flex flex-col space-y-8"> 
-                    {data.map((fund) => (
-                        <div key={fund.MFName} className="w-full">
-                        <div className="border rounded-lg p-6 shadow-sm bg-white hover:shadow-md transition-shadow">
-                            <h2 className="text-xl font-bold text-slate-800 mb-6 text-center border-b pb-4">{fund.MFName}</h2>
-                            {fund.heatmap.length>0 ? <Heatmap heatmapData={fund.heatmap} /> : <p className="text-center text-slate-500">No data available.</p>}
-                            
+                    <div className="flex items-center justify-between mb-6">
+                        <h2 className="text-2xl font-bold text-slate-800">Monthly Performance Heatmaps</h2>
+                        <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">
+                            {activeHeatmapIndex + 1} / {data.length}
+                        </span>
+                    </div>
+
+                    <div className="relative w-full">
+                        <div className="border rounded-lg p-6 shadow-sm bg-white min-h-[400px]">
+                            {/* Slide Controls Header */}
+                            <div className="flex items-center justify-between mb-6 border-b pb-4 gap-4">
+                                <button 
+                                    onClick={handlePrevHeatmap}
+                                    className="p-3 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 hover:text-indigo-900 shadow-sm transition-all hover:shadow-md"
+                                    title="Previous Fund"
+                                >
+                                    <ChevronLeft className="w-6 h-6" />
+                                </button>
+
+                                <h2 className="text-xl font-bold text-indigo-900 text-center flex-grow truncate px-2">
+                                    {data[activeHeatmapIndex]?.MFName}
+                                </h2>
+
+                                <button 
+                                    onClick={handleNextHeatmap}
+                                    className="p-3 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 hover:text-indigo-900 shadow-sm transition-all hover:shadow-md"
+                                    title="Next Fund"
+                                >
+                                    <ChevronRight className="w-6 h-6" />
+                                </button>
+                            </div>
+
+                            {/* Active Heatmap Content */}
+                            <div className="transition-opacity duration-300 ease-in-out" key={activeHeatmapIndex}>
+                                {data[activeHeatmapIndex]?.heatmap?.length > 0 ? (
+                                    <Heatmap heatmapData={data[activeHeatmapIndex].heatmap} />
+                                ) : (
+                                    <div className="flex flex-col items-center justify-center h-64 text-slate-400 bg-slate-50 rounded-lg border-2 border-dashed">
+                                        <p className="font-medium">No monthly data available for this fund.</p>
+                                    </div>
+                                )}
+                            </div>
                         </div>
-                        </div>
-                    ))}
                     </div>
                 </section>
 
                 <section>
                     <div className="flex items-center justify-between mb-6">
-                    <h2 className="text-xl font-bold text-slate-800">Top Holdings</h2>
+                        <h2 className="text-xl font-bold text-slate-800">Top Holdings</h2>
                     </div>
                     <HoldingsTable funds={data} />
                 </section>
