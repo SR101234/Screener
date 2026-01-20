@@ -118,6 +118,7 @@ const SelectionScreen = () => {
         <input
           type="text"
           className="block w-full pl-12 pr-4 py-4 bg-white border border-slate-200 rounded-2xl shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-all text-lg placeholder:text-slate-400"
+          style={{color:"black"}}
           placeholder="Type fund name or ISIN..."
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
