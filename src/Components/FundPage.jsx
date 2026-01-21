@@ -215,7 +215,7 @@ const FundPage = () => {
               Stocks Performance :
             </Typography>
             <Box mb={15} borderRadius="xl" boxShadow="lg">
-              <Heatmap heatmapData={fundName.heatmap || []} />
+              <Heatmap heatmapData={fundName.heatmap || []} asset = {fundName.asset || []} />
             </Box>
 
             {/* Holdings Table */}
