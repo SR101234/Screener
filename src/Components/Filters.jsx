@@ -61,7 +61,7 @@ const [categoryOpen, setCategoryOpen] = useState(false);
   const filtered = rows.filter((row) => {
 
     if (assetClass.length && !assetClass.includes(row.assetClass)) return false;
-    if (category.length && !category.some(cat => row.category?.toLowerCase().includes(cat.toLowerCase()))) return false;
+    if (category.length && !category.some(cat =>row.category?.trim().toLowerCase() === cat.trim().toLowerCase())) return false;
     if (debouncedMfName && !row.scheme.toLowerCase().includes(debouncedMfName.toLowerCase())) return false;
     if (row.aum < debouncedAum[0] || row.aum > debouncedAum[1]) return false;
     if (row.pe < debouncedTer[0] || row.pe > debouncedTer[1]) return false;
