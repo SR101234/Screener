@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Plotly from "plotly.js-dist-min";
+import { a } from "framer-motion/client";
 
 const Heatmap = ({ heatmapData = [], asset = [] }) => {
   const chartRef = useRef(null);

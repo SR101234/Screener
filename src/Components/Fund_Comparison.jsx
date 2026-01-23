@@ -21,15 +21,18 @@ const SelectionModal = ({ onClose, onProceed, initialSelectedFunds }) => {
   // Fetch Fund List
   useEffect(() => {
     const getFundList = async () => {
+
       try {
         const response = await fetch(import.meta.env.VITE_BACKEND + `/mf_compare_list`);
         const data = await response.json();
         setFundList(data);
+        
       } catch (err) {
         console.error("Error fetching fund list:", err);
       }
     };
     getFundList();
+    
   }, []);
 
   // Filter Logic
@@ -190,6 +193,7 @@ function FundComparison({ params: initialParams }) {
         }));
         
         setData(themedData);
+       
       } catch (err) {
         console.error("Error fetching funds:", err);
       } finally {
@@ -316,7 +320,7 @@ function FundComparison({ params: initialParams }) {
                             {/* Active Heatmap Content */}
                             <div className="transition-opacity duration-300 ease-in-out" key={activeHeatmapIndex}>
                                 {data[activeHeatmapIndex]?.heatmap?.length > 0 ? (
-                                    <Heatmap heatmapData={data[activeHeatmapIndex].heatmap} />
+                                    <Heatmap heatmapData={data[activeHeatmapIndex].heatmap} asset={data[activeHeatmapIndex].asset}/>
                                 ) : (
                                     <div className="flex flex-col items-center justify-center h-64 text-slate-400 bg-slate-50 rounded-lg border-2 border-dashed">
                                         <p className="font-medium">No monthly data available for this fund.</p>
