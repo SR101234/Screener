@@ -30,6 +30,7 @@ const Welcome = () => {
           import.meta.env.VITE_BACKEND + "/get_final_table"
         );
         const data = await response.json();
+        console.log("Fetched table data:", data); // Debug log to check data structure
         setTable(data);
       } catch (error) {
         console.error("Failed to fetch table data", error);
