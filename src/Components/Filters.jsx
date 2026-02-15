@@ -340,17 +340,50 @@ const Filters = ({ rows = [], onFilterChange, onDateChange }) => {
       />
 
       {/* Sliders */}
-      <Typography mt={2}>AUM (Cr.)</Typography>
-      <Slider value={aum} onChange={(e, v) => setAum(v)} min={0} max={100000} step={1000} valueLabelDisplay="auto" color="black" />
+      <Typography mt={2} color="black">AUM (Cr.)</Typography>
+      <Slider value={aum} onChange={(e, v) => setAum(v)} min={0} max={100000} step={1000} valueLabelDisplay="auto" sx={{
+        color: 'black', // Sets the track and thumb color
+        '& .MuiSlider-thumb': {
+          backgroundColor: 'black',
+        },
+        '& .MuiSlider-track': {
+          backgroundColor: 'black',
+        },
+        '& .MuiSlider-rail': {
+          backgroundColor: '#d8d8d8', // Optional: keeps the background rail light
+        },
+      }} />
 
-      <Typography mt={2}>Expense Ratio</Typography>
-      <Slider value={ter} onChange={(e, v) => setTer(v)} min={0} max={4} step={0.1} valueLabelDisplay="auto" color="black"/>
+      <Typography mt={2} color="black">Expense Ratio</Typography>
+      <Slider value={ter} onChange={(e, v) => setTer(v)} min={0} max={4} step={0.1} valueLabelDisplay="auto" sx={{
+        color: 'black', // Sets the track and thumb color
+        '& .MuiSlider-thumb': {
+          backgroundColor: 'black',
+        },
+        '& .MuiSlider-track': {
+          backgroundColor: 'black',
+        },
+        '& .MuiSlider-rail': {
+          backgroundColor: '#d8d8d8', // Optional: keeps the background rail light
+        },
+      }} />
 
-      <Typography mt={2}>Equity %</Typography>
-      <Slider value={equity} onChange={(e, v) => setEquity(v)} min={0} max={100} valueLabelDisplay="auto" color="black"/>
+      <Typography mt={2} color="black">Equity %</Typography>
+      <Slider value={equity} onChange={(e, v) => setEquity(v)} min={0} max={100} valueLabelDisplay="auto" sx={{
+        color: 'black', // Sets the track and thumb color
+        '& .MuiSlider-thumb': {
+          backgroundColor: 'black',
+        },
+        '& .MuiSlider-track': {
+          backgroundColor: 'black',
+        },
+        '& .MuiSlider-rail': {
+          backgroundColor: '#d8d8d8', // Optional: keeps the background rail light
+        },
+      }} />
 
-      <Typography mt={2}>Score</Typography>
-      <Slider value={score} onChange={(e, v) => setScore(v)} min={0} max={100} valueLabelDisplay="auto" color="black"/>
+      <Typography mt={2} color="black">Score</Typography>
+      <Slider value={score} onChange={(e, v) => setScore(v)} min={0} max={100} valueLabelDisplay="auto" color="black" />
 
       <Button fullWidth variant="outlined" sx={{ mt: 3 }} onClick={clearAllFilters}>
         Clear All
