@@ -169,6 +169,7 @@ const Welcome = () => {
               onChange={handleSearchChange}
               variant="unstyled"
               color="black"
+              background={"white"}
               fontSize="1.2rem"
               ml={3}
               pl={3}
