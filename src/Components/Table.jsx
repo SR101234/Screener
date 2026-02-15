@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { DataGrid, GridOverlay } from "@mui/x-data-grid";
 import Box from "@mui/material/Box";
 import Typography from "@mui/material/Typography";
@@ -41,33 +41,55 @@ export default function Table() {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filteredRows, setFilteredRows] = useState([]);
-  const navigate = useNavigate();
+  const isMounted = useRef(false);
+
+  // Initialize with current date to match Filters default
+  const [selectedDate, setSelectedDate] = useState({
+    month: new Date().getMonth() + 1,
+    year: new Date().getFullYear()
+  });
+
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [open, setOpen] = useState(false);
 
-  // Handle filters
+  // Handle client-side filters (Asset class, AUM, etc.)
   const handleFilterChange = useCallback((newRows) => {
     setFilteredRows(newRows);
   }, []);
 
-  // Fetch data from backend
+  // Handle Date Change (Triggers API Refetch)
+  const handleDateChange = useCallback((date) => {
+    setSelectedDate(date);
+
+
+  }, []);
+
+  // Fetch data from backend whenever selectedDate changes
   useEffect(() => {
-    // const cached = localStorage.getItem("mfData");
-
-    // if (cached) {
-    //   const parsed = JSON.parse(cached);
-    //   if (Date.now() - parsed.time < 86400) {
-    //     setRows(parsed.data);
-    //     setFilteredRows(parsed.data);
-    //     setLoading(false);
-    //     return;
-    //   }
-    // }
-
+    if (!isMounted.current) {
+      isMounted.current = true;
+      return;
+    }
     const fetchData = async () => {
+      setLoading(true);
       try {
-        const res = await fetch(import.meta.env.VITE_BACKEND);
+        const baseUrl = import.meta.env.VITE_BACKEND;
+        const url = new URL(baseUrl);
+        url.searchParams.append("month", selectedDate.month);
+        url.searchParams.append("year", selectedDate.year);
+
+        const res = await fetch(url.toString());
         const data = await res.json();
+
+        // --- NEW: Safety Check ---
+        if (!Array.isArray(data)) {
+          console.error("Backend returned an error:", data);
+          // Stop execution if data is not an array
+          setRows([]);
+          setFilteredRows([]);
+          return;
+        }
+        // -------------------------
 
         const formatted = data.map((item, index) => ({
           id: item.ISIN || index,
@@ -75,7 +97,6 @@ export default function Table() {
           scheme: item.Scheme,
           category: item.Category,
           assetClass: item.Asset_Class,
-          // Store as Numbers to allow correct sorting
           aum: parseFloat(item.AUM || 0),
           pe: parseFloat(item.PE || 0),
           nav: parseFloat(item.NAV || 0),
@@ -86,22 +107,20 @@ export default function Table() {
         setRows(formatted);
         setFilteredRows(formatted);
 
-        localStorage.setItem(
-          "mfData",
-          JSON.stringify({ time: Date.now(), data: formatted })
-        );
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching data:", err);
+        setRows([]);
+        setFilteredRows([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
-  }, []);
+  }, [selectedDate]); // Dependency on selectedDate ensures re-fetch on change
 
   const handleRowClick = (id) => {
-    window.open(`${window.location.origin}/MFinfo?id=${id}`, "_blank");
+    window.open(`${window.location.origin}/MFinfo?id=${id}&d=${selectedDate.month}-${selectedDate.year}`, "_blank");
   };
 
   const columns = [
@@ -121,49 +140,74 @@ export default function Table() {
         </a>
       ),
     },
-    { 
-        field: "score", 
-        headerName: "Score", 
-        type: "number", 
-        flex: 0.6, 
-        minWidth: 100,
-        valueFormatter: (value) => value?.toFixed(2)
+    {
+      field: "score",
+      headerName: "Score",
+      type: "number",
+      flex: 0.6,
+      minWidth: 100,
+      valueFormatter: (value) => value?.toFixed(2)
     },
     { field: "category", headerName: "Category", flex: 1, minWidth: 120 },
-    { 
-        field: "nav", 
-        headerName: "NAV", 
-        type: "number", 
-        flex: 0.5, 
-        minWidth: 80,
-        valueFormatter: (value) => value?.toFixed(2)
-    },
+    
     { field: "assetClass", headerName: "Asset Class", flex: 1, minWidth: 120 },
-    { 
-        field: "aum", 
-        headerName: "AUM (Cr.)", 
-        type: "number", 
-        flex: 0.7, 
-        minWidth: 100,
-        valueFormatter: (value) => value?.toLocaleString('en-IN', { minimumFractionDigits: 2 })
+    {
+      field: "aum",
+      headerName: "AUM (Cr.)",
+      type: "number",
+      flex: 0.7,
+      minWidth: 100,
+      valueFormatter: (value) => value?.toLocaleString('en-IN', { minimumFractionDigits: 2 })
     },
-    { 
-        field: "pe", 
-        headerName: "ExpRatio", 
-        type: "number", 
-        flex: 0.5, 
-        minWidth: 80,
-        valueFormatter: (value) => value?.toFixed(2)
+    {
+      field: "pe",
+      headerName: "ExpRatio",
+      type: "number",
+      flex: 0.5,
+      minWidth: 80,
+      valueFormatter: (value) => value?.toFixed(2)
     },
-    { 
-        field: "equity", 
-        headerName: "% Equity", 
-        type: "number", 
-        flex: 0.6, 
-        minWidth: 100,
-        valueFormatter: (value) => `${value?.toFixed(2)}%`
+    {
+      field: "equity",
+      headerName: "% Equity",
+      type: "number",
+      flex: 0.6,
+      minWidth: 100,
+      valueFormatter: (value) => `${value?.toFixed(2)}%`
     },
   ];
+
+  const today = new Date();
+const todayDay = today.getDate();
+
+// Determine the "effective month/year" for NAV
+let effectiveMonth = today.getMonth() + 1; // JS month is 0-based
+let effectiveYear = today.getFullYear();
+
+// If before 15th, NAV still belongs to previous month
+if (todayDay < 15) {
+  effectiveMonth -= 1;
+  if (effectiveMonth === 0) {
+    effectiveMonth = 12;
+    effectiveYear -= 1;
+  }
+}
+
+// Show column only if selected date matches effective period
+if (
+  selectedDate.month === effectiveMonth &&
+  selectedDate.year === effectiveYear
+) {
+  columns.splice(3, 0, {
+    field: "nav",
+    headerName: "Curr. NAV",
+    type: "number",
+    flex: 0.5,
+    minWidth: 80,
+    valueFormatter: (value) => value?.toFixed(2),
+  });
+}
+
 
   const toggleDrawer = (newOpen) => () => {
     setOpen(newOpen);
@@ -171,7 +215,11 @@ export default function Table() {
 
   const DrawerList = (
     <Box position="sticky" top={64} height="fit-content" px={2} width={isMobile ? 280 : 320}>
-      <Filters rows={rows} onFilterChange={handleFilterChange} />
+      <Filters
+        rows={rows}
+        onFilterChange={handleFilterChange}
+        onDateChange={handleDateChange}
+      />
     </Box>
   );
 
@@ -189,7 +237,7 @@ export default function Table() {
           }}
         >
           <Flex>
-            {/* Filters Sidebar */}
+            {/* Filters Sidebar (Desktop) */}
             {!isMobile && (
               <Box
                 flex={1}
@@ -198,7 +246,11 @@ export default function Table() {
                 height="fit-content"
                 maxWidth="20%"
               >
-                <Filters rows={rows} onFilterChange={handleFilterChange} />
+                <Filters
+                  rows={rows}
+                  onFilterChange={handleFilterChange}
+                  onDateChange={handleDateChange}
+                />
               </Box>
             )}
 
@@ -223,9 +275,16 @@ export default function Table() {
                   mb: 3,
                   fontFamily: "Montserrat",
                   color: "#4a4a7b",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center"
                 }}
               >
-                Mutual Fund Summary
+                <span>Mutual Fund Summary</span>
+                {/* Optional: Show currently selected date context */}
+                <span style={{ fontSize: '0.9rem', opacity: 0.7 }}>
+                  Data for: {selectedDate.month}/{selectedDate.year}
+                </span>
               </Typography>
 
               <DataGrid

@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Text, VStack } from '@chakra-ui/react';
 import { CircularProgress } from '@mui/material';
-import { Search, Plus, X, CheckCircle, Filter, ChevronLeft, ChevronRight } from 'lucide-react'; 
+import { Search, Plus, X, CheckCircle, Filter, ChevronLeft, ChevronRight, Calendar } from 'lucide-react'; 
+import { FormControl, InputLabel, MenuItem, Select } from '@mui/material';
 
 // --- Import your existing sub-components ---
 import FundCard from './FundCard';
@@ -9,6 +10,13 @@ import ComparisonChart from './ComparisonChart';
 import HoldingsTable from './HoldingsTable';
 import Tablenav from './Tablenav';
 import Heatmap from './Heatmap';
+import Footer from './Footer';
+
+// --- Constants ---
+const ALL_MONTHS = [
+  "January", "February", "March", "April", "May", "June", 
+  "July", "August", "September", "October", "November", "December"
+];
 
 // ============================================================================
 // INTERNAL COMPONENT: SELECTION MODAL
@@ -21,18 +29,15 @@ const SelectionModal = ({ onClose, onProceed, initialSelectedFunds }) => {
   // Fetch Fund List
   useEffect(() => {
     const getFundList = async () => {
-
       try {
         const response = await fetch(import.meta.env.VITE_BACKEND + `/mf_compare_list`);
         const data = await response.json();
         setFundList(data);
-        
       } catch (err) {
         console.error("Error fetching fund list:", err);
       }
     };
     getFundList();
-    
   }, []);
 
   // Filter Logic
@@ -159,9 +164,30 @@ function FundComparison({ params: initialParams }) {
   // State for Heatmap Slideshow
   const [activeHeatmapIndex, setActiveHeatmapIndex] = useState(0);
 
+  // --- Date Selection Logic ---
+  const latestReadyDate = useMemo(() => {
+    const today = new Date();
+    const day = today.getDate();
+    const latest = new Date();
+    if (day < 15) {
+      latest.setMonth(today.getMonth() - 1);
+    }
+    return latest;
+  }, []);
+
+  const currentYearValue = new Date().getFullYear();
+  const [selectedMonth, setSelectedMonth] = useState(latestReadyDate.getMonth());
+  const [selectedYear, setSelectedYear] = useState(latestReadyDate.getFullYear());
+
+  const years = Array.from({ length: 2 }, (_, i) => currentYearValue - i);
+  
+  const availableMonths = useMemo(() => {
+    if (selectedYear < currentYearValue) return ALL_MONTHS;
+    return ALL_MONTHS.slice(0, latestReadyDate.getMonth() + 1);
+  }, [selectedYear, latestReadyDate, currentYearValue]);
+
   const themes = ["purple", "teal", "gold"];
 
-  // Reset heatmap index when data changes
   useEffect(() => {
     setActiveHeatmapIndex(0);
   }, [comparisonParams]);
@@ -182,16 +208,21 @@ function FundComparison({ params: initialParams }) {
             fetch(import.meta.env.VITE_BACKEND + `/api/MFinfo`, {
               method: "POST",
               headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ code: p.id }),
+              body: JSON.stringify({ 
+                code: p.id,
+                month: selectedMonth + 1,
+                year: selectedYear 
+              }),
             }).then(res => res.json())
           )
         );
+        
         const themedData = responses.map((fund, index) => ({
           ...fund,
           colorTheme: themes[index % themes.length],
-          graph: fund.graph.map(point => ({ value: point.nav, date: point.markDate }))
+          graph: fund.graph ? fund.graph.map(point => ({ value: point.nav, date: point.markDate })) : []
         }));
-        
+
         setData(themedData);
        
       } catch (err) {
@@ -201,14 +232,19 @@ function FundComparison({ params: initialParams }) {
       }
     };
     fetchFunds();
-  }, [comparisonParams]);
+  }, [comparisonParams, selectedMonth, selectedYear]);
+
+  useEffect(() => {
+    if (selectedYear === currentYearValue && selectedMonth > latestReadyDate.getMonth()) {
+      setSelectedMonth(latestReadyDate.getMonth());
+    }
+  }, [selectedYear, selectedMonth, latestReadyDate, currentYearValue]);
 
   const handleUpdateFunds = (newParams) => {
     setComparisonParams(newParams);
     setShowSelectionScreen(false);
   };
 
-  // Slideshow Handlers
   const handleNextHeatmap = () => {
     setActiveHeatmapIndex((prev) => (prev + 1) % data.length);
   };
@@ -218,10 +254,9 @@ function FundComparison({ params: initialParams }) {
   };
 
   return (
-    <div className="min-h-screen text-slate-800 font-sans selection:bg-fintech-teal/20">
+    <div className="min-h-screen text-slate-800 font-sans selection:bg-indigo-50">
       <Tablenav />
       
-      {/* RENDER MODAL IF OPEN */}
       {showSelectionScreen && (
         <SelectionModal 
             onClose={() => setShowSelectionScreen(false)} 
@@ -231,59 +266,115 @@ function FundComparison({ params: initialParams }) {
       )}
 
       {isLoading ? (
-        <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100vh" }}>
-          <VStack colorPalette="teal">
+        <div className="flex justify-center items-center h-screen">
+          <VStack>
             <CircularProgress size={40} />
-            <Text color="rgba(66, 153, 225, 1)">Fetching Analytics...</Text>
+            <Text color="#4f46e5" fontWeight="semibold">Calculating Alpha...</Text>
           </VStack>
         </div>
       ) : (
         <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 pb-12 space-y-8">
           
-          {/* Page Title & Controls */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-2">
             <div>
               <h1 className="text-3xl md:text-4xl font-bold text-slate-900 tracking-tight">Fund Comparison</h1>
-              <p className="text-slate-800 mt-2 text-lg">Detailed analysis of NAV, CAGR, holdings & risk metrics.</p>
+              <p className="text-slate-500 mt-2 text-lg">Compare performance metrics and portfolio composition.</p>
             </div>
             
             <div className="flex items-center gap-4">
                  <button
                     onClick={() => setShowSelectionScreen(true)}
-                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-indigo-700 bg-indigo-100 rounded-lg hover:bg-indigo-200 transition-colors shadow-sm"
+                    className="flex items-center gap-2 px-4 py-2 text-sm font-semibold text-indigo-700 bg-indigo-50 rounded-lg hover:bg-indigo-100 transition-all border border-indigo-100 shadow-sm"
                  >
                     <Filter className="w-4 h-4" />
-                    Change Funds
+                    Change Selection
                  </button>
-                 <div className="text-right hidden md:block">
-                    <p className="text-xs font-semibold text-slate-800 uppercase tracking-widest">Last Updated</p>
-                    <p className="text-sm font-medium text-slate-700">{new Date().toLocaleDateString()}</p>
-                 </div>
             </div>
           </div>
 
-          {/* Empty State */}
+          
+
           {data.length === 0 && (
-            <div className="flex flex-col items-center justify-center h-64 bg-slate-50 border border-slate-200 rounded-lg mt-8">
+            <div className="flex flex-col items-center justify-center h-64 bg-slate-50 border-2 border-dashed border-slate-200 rounded-2xl">
                 <h3 className="text-xl font-medium text-slate-500 mb-4">No Funds Selected</h3>
-                <button onClick={() => setShowSelectionScreen(true)} className="px-6 py-3 font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-lg">
-                    Select Funds
+                <button onClick={() => setShowSelectionScreen(true)} className="px-6 py-3 font-bold text-white bg-indigo-600 rounded-xl hover:bg-indigo-700 shadow-lg transition-all">
+                    Select Funds to Compare
                 </button>
             </div>
           )}
 
-          {/* Data Content */}
           {data.length > 0 && (
             <>
                 <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     {data.map((fund) => <FundCard key={fund.MFName} fund={fund} />)}
                 </section>
 
-                <section>
+                <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <ComparisonChart data={data} />
                 </section>
 
-                {/* SLIDESHOW HEATMAP SECTION */}
+                {/* THEMED TIME PERIOD SELECTORS */}
+          <div className="inline-flex flex-col md:flex-row items-start md:items-center gap-4 p-5 bg-white border border-slate-200 rounded-2xl shadow-sm max-w-fit">
+            <div className="flex items-center gap-2 pr-4 border-r border-slate-100 hidden md:flex">
+               <Calendar className="w-5 h-5 text-indigo-500" />
+               <span className="text-sm font-bold text-slate-700 uppercase tracking-tight">Period</span>
+            </div>
+
+            <div className="flex gap-3 w-full md:w-auto">
+              <FormControl variant="outlined" size="small" sx={{ 
+                minWidth: 120,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '12px',
+                  backgroundColor: '#f8fafc',
+                  '& fieldset': { borderColor: '#e2e8f0' },
+                  '&:hover fieldset': { borderColor: '#6366f1' },
+                  '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
+                },
+                '& .MuiInputLabel-root': { color: '#64748b', fontSize: '0.875rem', fontWeight: 600 },
+                '& .MuiSelect-select': { fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }
+              }}>
+                <InputLabel>Year</InputLabel>
+                <Select
+                  value={selectedYear}
+                  label="Year"
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  MenuProps={{ PaperProps: { sx: { borderRadius: '12px', mt: 1, boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' } } }}
+                >
+                  {years.map((year) => (
+                    <MenuItem key={year} value={year}>{year}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl variant="outlined" size="small" sx={{ 
+                minWidth: 150,
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: '12px',
+                  backgroundColor: '#f8fafc',
+                  '& fieldset': { borderColor: '#e2e8f0' },
+                  '&:hover fieldset': { borderColor: '#6366f1' },
+                  '&.Mui-focused fieldset': { borderColor: '#6366f1', borderWidth: '1px' },
+                },
+                '& .MuiInputLabel-root': { color: '#64748b', fontSize: '0.875rem', fontWeight: 600 },
+                '& .MuiSelect-select': { fontSize: '0.875rem', fontWeight: 600, color: '#1e293b' }
+              }}>
+                <InputLabel>Month</InputLabel>
+                <Select
+                  value={selectedMonth}
+                  label="Month"
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                  MenuProps={{ PaperProps: { sx: { borderRadius: '12px', mt: 1, boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' } } }}
+                >
+                  {availableMonths.map((month) => (
+                    <MenuItem key={month} value={ALL_MONTHS.indexOf(month)}>
+                      {month}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </div>
+          </div>
+
                 <section className="w-full">
                     <div className="flex items-center justify-between mb-6">
                         <h2 className="text-2xl font-bold text-slate-800">Monthly Performance Heatmaps</h2>
@@ -293,37 +384,33 @@ function FundComparison({ params: initialParams }) {
                     </div>
 
                     <div className="relative w-full">
-                        <div className="border rounded-lg p-6 shadow-sm bg-white min-h-[400px]">
-                            {/* Slide Controls Header */}
-                            <div className="flex items-center justify-between mb-6 border-b pb-4 gap-4">
+                        <div className="border border-slate-200 rounded-2xl p-6 shadow-sm bg-white min-h-[400px]">
+                            <div className="flex items-center justify-between mb-6 border-b border-slate-100 pb-4 gap-4">
                                 <button 
                                     onClick={handlePrevHeatmap}
-                                    className="p-3 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 hover:text-indigo-900 shadow-sm transition-all hover:shadow-md"
-                                    title="Previous Fund"
+                                    className="p-3 rounded-full bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-slate-200"
                                 >
                                     <ChevronLeft className="w-6 h-6" />
                                 </button>
 
-                                <h2 className="text-xl font-bold text-indigo-900 text-center flex-grow truncate px-2">
+                                <h2 className="text-xl font-bold text-slate-800 text-center flex-grow truncate px-2">
                                     {data[activeHeatmapIndex]?.MFName}
                                 </h2>
 
                                 <button 
                                     onClick={handleNextHeatmap}
-                                    className="p-3 rounded-full bg-indigo-100 text-indigo-700 hover:bg-indigo-200 hover:text-indigo-900 shadow-sm transition-all hover:shadow-md"
-                                    title="Next Fund"
+                                    className="p-3 rounded-full bg-slate-50 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 transition-all border border-slate-200"
                                 >
                                     <ChevronRight className="w-6 h-6" />
                                 </button>
                             </div>
 
-                            {/* Active Heatmap Content */}
-                            <div className="transition-opacity duration-300 ease-in-out" key={activeHeatmapIndex}>
+                            <div className="transition-all duration-300" key={`${activeHeatmapIndex}-${selectedMonth}`}>
                                 {data[activeHeatmapIndex]?.heatmap?.length > 0 ? (
                                     <Heatmap heatmapData={data[activeHeatmapIndex].heatmap} asset={data[activeHeatmapIndex].asset}/>
                                 ) : (
-                                    <div className="flex flex-col items-center justify-center h-64 text-slate-400 bg-slate-50 rounded-lg border-2 border-dashed">
-                                        <p className="font-medium">No monthly data available for this fund.</p>
+                                    <div className="flex flex-col items-center justify-center h-64 text-slate-400 bg-slate-50 rounded-xl border-2 border-dashed border-slate-200">
+                                        <p className="font-medium">No performance data for {ALL_MONTHS[selectedMonth]} {selectedYear}.</p>
                                     </div>
                                 )}
                             </div>
@@ -331,9 +418,9 @@ function FundComparison({ params: initialParams }) {
                     </div>
                 </section>
 
-                <section>
+                <section className="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm">
                     <div className="flex items-center justify-between mb-6">
-                        <h2 className="text-xl font-bold text-slate-800">Top Holdings</h2>
+                        <h2 className="text-xl font-bold text-slate-800">Portfolio Breakdown</h2>
                     </div>
                     <HoldingsTable funds={data} />
                 </section>
@@ -341,6 +428,7 @@ function FundComparison({ params: initialParams }) {
           )}
         </main>
       )}
+      <Footer />
     </div>
   );
 }

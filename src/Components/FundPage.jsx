@@ -1,9 +1,8 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useMemo } from "react";
 import Typography from "@mui/material/Typography";
 import {
   Box,
   Flex,
-  Image,
   Spinner,
   Text,
   Button,
@@ -17,13 +16,20 @@ import {
   YAxis,
   Tooltip,
 } from "recharts";
-import { useLocation, useParams } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import Tablenav from "./Tablenav";
 import Heatmap from "./Heatmap";
 import Footer from "./Footer";
+import { FormControl, InputLabel, MenuItem, Select } from "@mui/material";
 
+// --- Constants ---
+const ALL_MONTHS = [
+  "January", "February", "March", "April", "May", "June",
+  "July", "August", "September", "October", "November", "December"
+];
+
+// --- Chart Component ---
 const ChartWrapper = ({ data }) => {
-
   const containerRef = useRef(null);
   const [width, setWidth] = useState(350);
 
@@ -34,7 +40,6 @@ const ChartWrapper = ({ data }) => {
       }
     };
     updateWidth();
-
     window.addEventListener("resize", updateWidth);
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
@@ -61,14 +66,8 @@ const ChartWrapper = ({ data }) => {
             borderRadius: "8px",
             color: "#000000",
           }}
-          labelStyle={{
-            color: "#000000",
-            fontWeight: 600,
-          }}
-          itemStyle={{
-            color: "#000000",
-            fontWeight: 500,
-          }}
+          labelStyle={{ color: "#000000", fontWeight: 600 }}
+          itemStyle={{ color: "#000000", fontWeight: 500 }}
         />
         <Area
           type="monotone"
@@ -82,52 +81,65 @@ const ChartWrapper = ({ data }) => {
   );
 };
 
+// --- Main Page Component ---
 const FundPage = () => {
-  const [selectedRange, setSelectedRange] = useState("Max");
-  const [filteredGraphData, setFilteredGraphData] = useState([]);
   const location = useLocation();
-  const [fundName, setFundName] = useState({});
-  const [rows, setRows] = useState([]);
-  // 1. Add a dedicated loading state
-  const [loading, setLoading] = useState(true);
   const isMobile = window.innerWidth <= 480;
 
+  // 1. Calculate the "Safe" Default Date (15th of the month rule)
+  const latestReadyDate = useMemo(() => {
+    const today = new Date();
+    const day = today.getDate();
+    const latest = new Date();
+    // If today is before the 15th, the data for the current month isn't ready.
+    // We default to the previous month.
+    if (day < 15) {
+      latest.setMonth(today.getMonth() - 1);
+    }
+    return latest;
+  }, []);
+
+  const currentYearValue = new Date().getFullYear();
+
+  // 2. State Management
+  const [selectedMonth, setSelectedMonth] = useState(latestReadyDate.getMonth());
+  const [selectedYear, setSelectedYear] = useState(latestReadyDate.getFullYear());
+  const [selectedRange, setSelectedRange] = useState("Max");
+  const [filteredGraphData, setFilteredGraphData] = useState([]);
+  const [fundName, setFundName] = useState({});
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // 3. Dynamic Date Options
+  const years = Array.from({ length: 1 }, (_, i) => currentYearValue - i);
+
+  const availableMonths = useMemo(() => {
+    // If the user selects a year prior to the current year, all months are available.
+    if (selectedYear < currentYearValue) {
+      return ALL_MONTHS;
+    }
+    // If the current year is selected, only show months up to the latest ready month.
+    return ALL_MONTHS.slice(0, latestReadyDate.getMonth() + 1);
+  }, [selectedYear, latestReadyDate, currentYearValue]);
+
+  // 4. Graph Range Filter Logic
   const getFilteredGraph = (range, graphData = []) => {
     const now = new Date();
     let fromDate = new Date();
     switch (range) {
-      case "1D":
-        fromDate.setDate(now.getDate() - 1);
-        break;
-      case "5D":
-        fromDate.setDate(now.getDate() - 5);
-        break;
-      case "1M":
-        fromDate.setMonth(now.getMonth() - 1);
-        break;
-      case "6M":
-        fromDate.setMonth(now.getMonth() - 6);
-        break;
-      case "YTD":
-        fromDate = new Date(now.getFullYear(), 0, 1);
-        break;
-      case "1Y":
-        fromDate.setFullYear(now.getFullYear() - 1);
-        break;
-      case "3Y":
-        fromDate.setFullYear(now.getFullYear() - 3);
-        break;
-      case "5Y":
-        fromDate.setFullYear(now.getFullYear() - 5);
-        break;
+      case "1D": fromDate.setDate(now.getDate() - 1); break;
+      case "5D": fromDate.setDate(now.getDate() - 5); break;
+      case "1M": fromDate.setMonth(now.getMonth() - 1); break;
+      case "6M": fromDate.setMonth(now.getMonth() - 6); break;
+      case "YTD": fromDate = new Date(now.getFullYear(), 0, 1); break;
+      case "1Y": fromDate.setFullYear(now.getFullYear() - 1); break;
+      case "3Y": fromDate.setFullYear(now.getFullYear() - 3); break;
+      case "5Y": fromDate.setFullYear(now.getFullYear() - 5); break;
       case "Max":
-      default:
-        return graphData;
+      default: return graphData;
     }
     fromDate.setHours(0, 0, 0, 0);
-    const filtered = graphData.filter(
-      (item) => new Date(item.markDate) >= fromDate
-    );
+    const filtered = graphData.filter((item) => new Date(item.markDate) >= fromDate);
     return filtered.length > 0 ? filtered : graphData;
   };
 
@@ -138,47 +150,56 @@ const FundPage = () => {
     { field: "perc", headerName: "%Hold", flex: 0.5 },
   ];
 
+  // 5. Data Fetching Effect
   useEffect(() => {
-    const search = location.search;
-    const query = new URLSearchParams(search);
+    const query = new URLSearchParams(location.search);
     const queryID = query.get("id");
-    console.log(queryID);
 
     const openpage = async () => {
       try {
-        // 2. Set loading to true before fetching
         setLoading(true);
+        const response = await fetch(
+          import.meta.env.VITE_BACKEND + `/api/MFinfo`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              code: queryID,
+              month: selectedMonth + 1, // Sending 1-12 to backend
+              year: selectedYear,
+            }),
+          }
+        );
 
-        const response = await fetch(import.meta.env.VITE_BACKEND + `/api/MFinfo`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ code: queryID }),
-        });
         const res = await response.json();
-        setRows(res.asset);
+        setRows(res.asset || []);
+        console.log(res.asset);
         setFundName(res);
+
         const fullGraph = res.graph || [];
         setFilteredGraphData(getFilteredGraph("Max", fullGraph));
-      } catch (error) {
-        console.error("Error fetching fund data:", error);
+      } catch (err) {
+        console.error("Error fetching fund info:", err);
       } finally {
-        // 3. Set loading to false after fetch (success or failure)
         setLoading(false);
       }
     };
 
-    if (queryID) {
-      openpage();
+    if (queryID) openpage();
+  }, [location.search, selectedMonth, selectedYear]);
+
+  // 6. Safety Sync: If year changes to current year, ensure month is still valid
+  useEffect(() => {
+    if (selectedYear === currentYearValue && selectedMonth > latestReadyDate.getMonth()) {
+      setSelectedMonth(latestReadyDate.getMonth());
     }
-  }, [location.search]);
+  }, [selectedYear, selectedMonth, latestReadyDate, currentYearValue]);
 
   return (
     <>
       <div className="outerBody" style={{ backgroundColor: "white", minHeight: "100vh" }}>
-        {/* Navbar */}
         <Tablenav />
 
-        {/* 4. Use the loading state to conditionally render */}
         {loading ? (
           <Flex
             justify="center"
@@ -200,9 +221,65 @@ const FundPage = () => {
               fontWeight="bold"
               color="black"
               mb={0}
+              mt={4}
             >
               {fundName.MFName}
             </Typography>
+
+            {/* Time Period Selectors */}
+            <Typography
+              variant="h6"
+              gutterBottom
+              textAlign="left"
+              color="black"
+              mb={2} // Increased margin slightly for better breathing room
+              mt={4}
+              fontWeight="semibold"
+            >
+              Time Period:
+            </Typography>
+
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'row', // Explicitly force row
+                alignItems: 'center',
+                gap: 2,               // Standard spacing
+                mb: 6,
+                mt: 4,
+                width: "100%",
+                maxWidth: { base: "100%", md: "500px" } // Increased max-width
+              }}
+            >
+              <FormControl size="small" sx={{ minWidth: "120px", flex: 1 }}>
+                <InputLabel>Year</InputLabel>
+                <Select
+                  value={selectedYear}
+                  label="Year"
+                  onChange={(e) => setSelectedYear(e.target.value)}
+                  MenuProps={{ PaperProps: { style: { maxHeight: 200 } } }}
+                >
+                  {years.map((year) => (
+                    <MenuItem key={year} value={year}>{year}</MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+
+              <FormControl size="small" sx={{ minWidth: "150px", flex: 2, marginLeft:2 }}>
+                <InputLabel>Month</InputLabel>
+                <Select
+                  value={selectedMonth}
+                  label="Month"
+                  onChange={(e) => setSelectedMonth(e.target.value)}
+                >
+                  {availableMonths.map((month) => (
+                    <MenuItem key={month} value={ALL_MONTHS.indexOf(month)}>
+                      {month}
+                    </MenuItem>
+                  ))}
+                </Select>
+              </FormControl>
+            </Box>
 
             <Typography
               variant={isMobile ? "h6" : "h5"}
@@ -211,11 +288,12 @@ const FundPage = () => {
               color="black"
               mb={1}
               fontWeight="semibold"
+              mt={5}
             >
-              Stocks Performance :
+              Stocks Performance:
             </Typography>
-            <Box mb={15} borderRadius="xl" boxShadow="lg">
-              <Heatmap heatmapData={fundName.heatmap || []} asset = {fundName.asset || []} />
+            <Box mb={10} borderRadius="xl" boxShadow="lg" p={2}>
+              <Heatmap heatmapData={fundName.heatmap || []} asset={fundName.asset || []} />
             </Box>
 
             {/* Holdings Table */}
@@ -241,7 +319,6 @@ const FundPage = () => {
                 columns={columns}
                 getRowId={(row) => row.isin}
                 pageSize={10}
-                rowsPerPageOptions={[10]}
                 hideFooter={true}
                 rowHeight={50}
                 sx={{
@@ -283,18 +360,14 @@ const FundPage = () => {
                   transition="all 0.3s"
                   _hover={{ transform: "scale(1.05)" }}
                 >
-                  <Text fontSize="sm" fontWeight="600" color="#555555">
-                    {item.label}
-                  </Text>
-                  <Text fontSize="lg" fontWeight="700" color="#111111">
-                    {item.value}
-                  </Text>
+                  <Text fontSize="sm" fontWeight="600" color="#555555">{item.label}</Text>
+                  <Text fontSize="lg" fontWeight="700" color="#111111">{item.value}</Text>
                 </Box>
               ))}
             </Flex>
 
-            {/* Range Selector */}
-            <Flex justify="center" gap={2} wrap="wrap" mb={10}>
+            {/* Range Selector Buttons */}
+            <Flex justify="center" gap={2} wrap="wrap" mb={4}>
               {["5D", "1M", "6M", "YTD", "1Y", "3Y", "5Y", "Max"].map((range) => (
                 <Button
                   key={range}
@@ -302,14 +375,10 @@ const FundPage = () => {
                   bg={selectedRange === range ? "teal.400" : "gray.100"}
                   color={selectedRange === range ? "white" : "gray.700"}
                   borderRadius="xl"
-                  _hover={{
-                    bg: selectedRange === range ? "teal.500" : "gray.200",
-                  }}
+                  _hover={{ bg: selectedRange === range ? "teal.500" : "gray.200" }}
                   onClick={() => {
                     setSelectedRange(range);
-                    setFilteredGraphData(
-                      getFilteredGraph(range, fundName.graph || [])
-                    );
+                    setFilteredGraphData(getFilteredGraph(range, fundName.graph || []));
                   }}
                 >
                   {range}
@@ -317,12 +386,12 @@ const FundPage = () => {
               ))}
             </Flex>
 
-            {/* Chart */}
-            <div color="black">
+            {/* Performance Chart */}
+            <Box mb={10} p={4} borderRadius="xl" border="1px solid #f0f0f0">
               <ChartWrapper data={filteredGraphData} />
-            </div>
+            </Box>
 
-            {/* Exit Load */}
+            {/* Exit Load Section */}
             <Box
               bg="#ffffff"
               py={6}
@@ -333,9 +402,7 @@ const FundPage = () => {
               transition="all 0.3s"
               _hover={{ transform: "scale(1.03)", boxShadow: "2xl" }}
             >
-              <Text fontWeight="semibold" mb={2} color={"black"}>
-                Exit Load:
-              </Text>
+              <Text fontWeight="semibold" mb={2} color={"black"}>Exit Load:</Text>
               <Text fontSize="lg" fontWeight="bold" color={"black"}>
                 {fundName.exitload}
               </Text>
@@ -343,7 +410,7 @@ const FundPage = () => {
           </Box>
         ) : (
           <Flex justify="center" align="center" h="50vh">
-            <Text fontSize="lg" color="red.500">Failed to load data. Please try again.</Text>
+            <Text fontSize="lg" color="red.500">No data found for the selected period.</Text>
           </Flex>
         )}
 

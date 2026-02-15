@@ -1,6 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import Plotly from "plotly.js-dist-min";
-import { a } from "framer-motion/client";
 
 const Heatmap = ({ heatmapData = [], asset = [] }) => {
   const chartRef = useRef(null);
@@ -82,6 +81,9 @@ const Heatmap = ({ heatmapData = [], asset = [] }) => {
     if (!data.length || !asset.length) return {};
 
     const holdingByIsin = asset.reduce((acc, a) => {
+
+
+    
       acc[a.isin] = (acc[a.isin] || 0) + Number(a.perc || 0);
       return acc;
     }, {});
@@ -265,6 +267,7 @@ const Heatmap = ({ heatmapData = [], asset = [] }) => {
           maxWidth: "1000px",
           minHeight: "250px",
           margin: "0 auto",
+
         }}
       />
 
@@ -280,6 +283,7 @@ const Heatmap = ({ heatmapData = [], asset = [] }) => {
               color: showAll ? "#6e27ff" : "#fff",
               fontWeight: 600,
               cursor: "pointer",
+              marginBottom:20,
             }}
           >
             {showAll ? "Show Less" : "Show All"}
