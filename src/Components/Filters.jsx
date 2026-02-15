@@ -232,7 +232,7 @@ const Filters = ({ rows = [], onFilterChange, onDateChange }) => {
   /* -------------------- UI -------------------- */
   return (
     <div style={{ maxWidth: 320, margin: "0 auto", padding: "8%" }}>
-      <Typography variant="h6" fontWeight="bold" align="center">
+      <Typography variant="h6" fontWeight="bold" align="center" color="black">
         Filter
       </Typography>
 
