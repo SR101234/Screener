@@ -383,7 +383,18 @@ const Filters = ({ rows = [], onFilterChange, onDateChange }) => {
       }} />
 
       <Typography mt={2} color="black">Score</Typography>
-      <Slider value={score} onChange={(e, v) => setScore(v)} min={0} max={100} valueLabelDisplay="auto" color="black" />
+      <Slider value={score} onChange={(e, v) => setScore(v)} min={0} max={100} valueLabelDisplay="auto" sx={{
+        color: 'black', // Sets the track and thumb color
+        '& .MuiSlider-thumb': {
+          backgroundColor: 'black',
+        },
+        '& .MuiSlider-track': {
+          backgroundColor: 'black',
+        },
+        '& .MuiSlider-rail': {
+          backgroundColor: '#d8d8d8', // Optional: keeps the background rail light
+        },
+      }} />
 
       <Button fullWidth variant="outlined" sx={{ mt: 3 }} onClick={clearAllFilters}>
         Clear All
